@@ -1,0 +1,2 @@
+# DiagClientTest
+playing with DiagnosticsClient
