@@ -103,12 +103,16 @@ namespace DiagClientTest
 
         private async void btnStopPipe_Click(object sender, RoutedEventArgs e)
         {
+            if (session == null)
+                return;
+
+
             await session.StopAsync(System.Threading.CancellationToken.None);
             session?.Dispose();
         }
 
         private void btnClearLog_Click(object sender, RoutedEventArgs e)
-        {
+        {            
             traceLog.Items.Clear();
         }
 
