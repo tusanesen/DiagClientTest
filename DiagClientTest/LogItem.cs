@@ -14,7 +14,9 @@ namespace DiagClientTest
 
         public override string ToString()
         {
-            var v = Name;
+            var evtType = Data?.GetType().Name??"";
+            var v = $"{Name} {evtType}";
+            
 
             return v;
         }

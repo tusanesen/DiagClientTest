@@ -1,12 +1,14 @@
 ﻿using Microsoft.Diagnostics.NETCore.Client;
 using Microsoft.Diagnostics.Tracing;
 using Microsoft.Diagnostics.Tracing.Parsers;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -42,43 +44,49 @@ namespace DiagClientTest
             var client = new DiagnosticsClient(processId);
             session = client.StartEventPipeSession(pvdList, false);
 
+
             Task streamTask = Task.Run(() => {
                 var source = new EventPipeEventSource(session.EventStream);
-                source.Clr.All += (TraceEvent obj) => Log(obj.EventName + ":" +obj.FormattedMessage, obj);
+
+
+                source.Clr.All += (TraceEvent obj) => Log(obj.ID.ToString(), obj.EventName + ":" +obj.FormattedMessage, obj);
                 try {
+                    //TODO: ?
                     source.Process();
                 }
-                // NOTE: This exception does not currently exist. It is something that needs to be added to TraceEvent.
                 catch (Exception e) {
-                    Log("Error encountered while processing events");
-                    Log(e.ToString());
+                    Log(null, "Error encountered while processing events");
+                    Log(null, e.ToString());
                 }
             });
-
-            //Task inputTask = Task.Run(() =>
-            //{
-            //    Console.WriteLine("Press Enter to exit");
-            //    while (Console.ReadKey().Key != ConsoleKey.Enter)
-            //    {
-            //        Task.Delay(TimeSpan.FromMilliseconds(100));
-            //    }
-            //    session.Stop();
-            //});
-
-            //Task.WaitAny(streamTask/*, inputTask*/);
+           
 
         }
 
-
-        public void Log(string l, TraceEvent data = null)
+        string[] evtIds;
+        public void Log(string eid, string l, TraceEvent data = null)
         {
 
             this.Dispatcher.Invoke(() => {
-                traceLog.Items.Add(new LogItem() { Name = l, Data = data });
-                //traceLog.AppendText("\r" + l);
-                //traceLog.ScrollToEnd();
+
+                
+                if (eid != null && evtIds?.Contains(eid) == true) {
+                    traceLog2.Items.Add(new LogItem() { Name = l, Data = data });
+                    if (traceLog2.Items.Count > 500) {
+                        traceLog2.Items.RemoveAt(0);
+                    }
+                }
+                else {
+                    traceLog.Items.Add(new LogItem() { Name = l, Data = data });
+
+                    if (traceLog.Items.Count > 500) {
+                        traceLog.Items.RemoveAt(0);
+                    }
+                }
             });
         }
+
+
         void StartPipe(StartInfo si)
         {
             var pvdlst = new List<EventPipeProvider>();
@@ -90,7 +98,7 @@ namespace DiagClientTest
                 MessageBox.Show("no provider selected");
                 return;
             }
-            
+
 
             PrintEventsLive(si.Pid, pvdlst);
         }
@@ -112,23 +120,42 @@ namespace DiagClientTest
         }
 
         private void btnClearLog_Click(object sender, RoutedEventArgs e)
-        {            
+        {
             traceLog.Items.Clear();
         }
 
         private void traceLog_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (traceLog.SelectedItem != null && traceLog.SelectedItem is LogItem li) {
+            var tl = sender as ListBox;
+            if (tl.SelectedItem != null && tl.SelectedItem is LogItem li) {
                 var msg = $"{li.Data.ProviderName} " +
                     $"{Environment.NewLine} {li.Name}";
 
-                MessageBox.Show(msg);
+                string dataStr = null;
+
+
+                foreach (var pi in li.Data.GetType().GetProperties()) {
+
+                    try {
+                        var v = pi.GetValue(li.Data);
+                        if (v != null) {
+                            if (!string.IsNullOrEmpty(dataStr))
+                                dataStr += Environment.NewLine;
+                            dataStr += pi.Name + ":" + v.ToString();
+                        }
+                    }
+                    catch (Exception) {
+                        //prop threw ex
+                    }
+                }
+
+                MessageBox.Show(msg + " " + dataStr);
             }
         }
 
-        
 
-        private void btnStart_Click(object sender, RoutedEventArgs e)
+
+        private async void btnStart_Click(object sender, RoutedEventArgs e)
         {
             var wnd = new StartInfoWindow();
             wnd.Owner = this;
@@ -136,9 +163,37 @@ namespace DiagClientTest
                 var si = wnd.Result;
 
                 txtProcInfo.Text = $"{si.PInfo} - {si.Pid}";
+
+                evtIds = si.Events2Focus;
+                if(evtIds?.Length > 0)
+                    txtEventsToFocus.Text = String.Join(",", evtIds); 
+
                 StartPipe(si);
+
+
+                //processi izleyecek bişeyler yapalım..
+                //await WatchProc(si.Pid);
+                //txtProcInfo.Foreground = Brushes.Red;
+
             }
 
         }
+
+        private Task WatchProc(int pid)
+        {
+            return Task.Run(() => {
+                while (true) {
+
+                    var p = Process.GetProcessById(pid);
+
+                    if (p == null)
+                        break;
+
+                    Thread.Sleep(1000);
+                }
+            });
+        }
+
+
     }
 }

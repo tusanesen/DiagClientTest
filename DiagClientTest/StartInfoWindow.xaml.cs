@@ -94,7 +94,7 @@ namespace DiagClientTest
 
 
             if (pid == 0 && !string.IsNullOrEmpty(txtLaunchCmd.Text)) {
-                string cmd = txtLaunchCmd.Text;
+                string cmd = txtLaunchCmd.Text.Trim();
                 var cmdArg = cmd.Split(" ");
                 string arg = null;
                 if (cmdArg.Length > 1)
@@ -105,7 +105,14 @@ namespace DiagClientTest
                 p.StartInfo.UseShellExecute = true;
                 if (arg != null)
                     p.StartInfo.Arguments = arg;
-                p.Start();
+
+                try {
+                    p.Start();
+                }
+                catch (Exception ex) {
+                    MessageBox.Show("error launching app:"+ex.Message);
+                    return;
+                }
                 pid = p.Id;
                 pinfo = p.ProcessName;
             }
@@ -115,7 +122,8 @@ namespace DiagClientTest
                 return;
             }
 
-            this.Result = new StartInfo() { Pid = pid, PInfo = pinfo,  Providers = pvdlst };
+            var evts = txtEvents.Text.Split(",");
+            this.Result = new StartInfo() { Pid = pid, PInfo = pinfo,  Providers = pvdlst, Events2Focus = evts };
 
             this.DialogResult = true;
 

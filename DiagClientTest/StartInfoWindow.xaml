@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DiagClientTest"
         mc:Ignorable="d"
-        Title="StartInfoWindow" Height="300" Width="500">
+        Title="StartInfoWindow" Height="400" Width="500">
 
     <DockPanel LastChildFill="True">
 
@@ -26,27 +26,34 @@
                         <Button Height="50" Width="80" Name="btnProcSearch" Click="btnProcSearch_Click">proc. search</Button>
 
                     </StackPanel>
-                   
+
                     <ListBox Margin="10px" Name="procList" Visibility="Collapsed"></ListBox>
                 </StackPanel>
 
-                <StackPanel x:Name="lnchPanel">
+                <StackPanel x:Name="lnchPanel" Orientation="Horizontal">
+                    <Label Content="launch command:"></Label>
                     <TextBox Margin="10" Width="300" Height="100px" AcceptsReturn="True" TextWrapping="Wrap"  x:Name="txtLaunchCmd" 
-                     Text="D:\projects\timertest\timertest\bin\Debug\net6.0\timertest.exe tt"></TextBox>
+                     Text=""></TextBox>
                 </StackPanel>
 
 
-                
-                
-                
+
+
+                <Label Content="select providers:"></Label>
                 <StackPanel Margin="20px" x:Name="providers"></StackPanel>
+
+                <Label Content="events to focus (Id's seperated by comma):"></Label>
+                <TextBox Margin="10" Width="300" Height="100px" AcceptsReturn="True" TextWrapping="Wrap"  x:Name="txtEvents" 
+                     Text=""></TextBox>
+
+
 
             </StackPanel>
 
 
         </StackPanel>
 
-        
+
     </DockPanel>
-    
+
 </Window>
